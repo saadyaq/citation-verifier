@@ -22,3 +22,9 @@ class SourceContent(BaseModel):
     fetch_status : str ="pending" # success, failed, timeout, paywalled
 
 
+class VerificationResult(BaseModel):
+    claim: ClaimCitation
+    verdict: Verdict
+    confidence: float = Field(ge=0.0, le=1.0)
+    explanation: str
+    source_quote: Optional[str] = None
