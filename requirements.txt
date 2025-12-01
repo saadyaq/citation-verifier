@@ -1,0 +1,27 @@
+#Core depedencies
+pydantic
+httpx
+python-dotenv
+
+# LLM SDKs
+anthropic 
+openai
+
+# Parsing
+trafilatura 
+PyMuPDF 
+beautifulsoup4 
+markdownify
+
+# RAG 
+sentence-transformers 
+chromadb
+
+# CLI
+typer 
+rich
+
+# Dev
+pytest 
+ruff 
+pre-commit
