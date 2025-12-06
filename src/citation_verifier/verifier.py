@@ -1,5 +1,17 @@
 import anthropic
 from .models import ClaimCitation, SourceContent, VerificationResult, Verdict
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Verify API key exists
+api_key = os.getenv("ANTHROPIC_API_KEY")
+if not api_key:
+    raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+
+client = anthropic.Anthropic(api_key=api_key)
+print("✓ Claude API client initialized successfully")
 
 VERIFICATION_PROMPT= """Tu es un vérificateur de citations. Ta tâche est de déterminer si une source citée supporte réellement l'affirmation faite.
 
@@ -40,4 +52,29 @@ async def verify_claim(
             explanation = f"Source unavailable : {source.fetch_status}"
         )
     
-    
+    content= source.content[:8000] if len(source.content)>8000 else source.content
+    client = anthropic.Anthropic(api_key=api_key)
+    print("Claude API client initialized successfully")
+
+    response = client.messages.create(
+        model = model ,
+        max_tokens = 1024 ,
+        messages = [{
+            "role" : "user",
+            "content" : VERIFICATION_PROMPT.format(
+                claim = claim.claim_text,
+                source_content = content
+            )
+        }]
+    )
+
+    import json 
+    result_data = json.loads(response.content[0].text)
+
+    return VerificationResult(
+        claim=claim,
+        verdict=Verdict(result_data["verdict"]),
+        confidence=result_data["confidence"],
+        explanation=result_data["explanation"],
+        source_quote=result_data.get("source_quote")
+    )
