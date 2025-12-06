@@ -44,7 +44,7 @@ async def verify_claim(
 ) -> VerificationResult:
     """Verify if a source support the claim """
 
-    if source.fetch != "success" or not source.content:
+    if source.fetch_status != "success" or not source.content:
         return VerificationResult(
             claim = claim ,
             verdict = Verdict.SOURCE_UNAVAILABLE,

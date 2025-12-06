@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "citation-verifier"
+version = "0.1.0"
+description = "AI-powered citation verification tool"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic",
+    "httpx",
+    "python-dotenv",
+    "anthropic",
+    "openai",
+    "trafilatura",
+    "PyMuPDF",
+    "beautifulsoup4",
+    "markdownify",
+    "sentence-transformers",
+    "chromadb",
+    "typer",
+    "rich",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "pre-commit",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/citation_verifier"]
