@@ -12,9 +12,14 @@ class Verdict(str, Enum):
 
 class ClaimCitation(BaseModel):
     """Infos about the citation"""
-    claim_text: str = Field(description="L'affirmation faite dans le document")
-    citation_url: str = Field(description="URL de la source citée")
-    original_context: str = Field(description="Phrase complète dans la citation")
+    claim_text: str
+    citation_url: Optional[str] = None      
+    citation_ref: Optional[str] = None      
+    original_context: str
+    
+    @property
+    def has_url(self) -> bool:
+        return self.citation_url is not None
 
 class SourceContent(BaseModel):
     url : str
