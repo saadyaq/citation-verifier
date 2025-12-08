@@ -1,6 +1,6 @@
-import json 
+import json
 from anthropic import Anthropic
-from ..models import ClaimCitation
+from citation_verifier.models import ClaimCitation
 from dotenv import load_dotenv
 import os 
 load_dotenv()
@@ -50,25 +50,39 @@ def extract_claims( document_text:str , model : str ="claude-3-5-haiku-20241022"
 
     text = document_text[:15000] if len(document_text) > 15000 else document_text
     
-    response = client.messages.create(
-        model = model ,
-        max_tokens = 4096,
-        messages=[{
-            "role" : "user",
-            "content" : EXTRACTION_PROMPT.format(document_text=text)
-        }]
-    )
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            messages=[{
+                "role": "user",
+                "content": EXTRACTION_PROMPT.format(document_text=text)
+            }]
+        )
 
+        result = json.loads(response.content[0].text)
 
-    result = json.loads(response.content[0].text)
+        claims = []
+        for item in result.get("claims", []):
+            # Skip items without required fields
+            if "claim_text" not in item or "original_context" not in item:
+                continue
 
-    claims = []
-    for item in result.get("claims", []):
-        claims.append(ClaimCitation(
-             claim_text=item["claim_text"],
-            citation_url=item.get("citation_url"),
-            citation_ref=item.get("citation_ref"),
-            original_context=item["original_context"]
-        ))
-    
-    return claims
+            claims.append(ClaimCitation(
+                claim_text=item["claim_text"],
+                citation_url=item.get("citation_url"),
+                citation_ref=item.get("citation_ref"),
+                original_context=item["original_context"]
+            ))
+
+        return claims
+
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse JSON response from Claude: {e}")
+        return []
+    except KeyError as e:
+        print(f"Error: Missing expected field in response: {e}")
+        return []
+    except Exception as e:
+        print(f"Error during claim extraction: {e}")
+        return []
