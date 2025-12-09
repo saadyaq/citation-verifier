@@ -58,3 +58,29 @@ def parse_url(url : str , timeout : int = 30) -> ParsedWebPage:
         return ParsedWebPage(url=url, text="", title=None, fetch_status="timeout")
     except Exception as e:
         return ParsedWebPage(url=url, text="", title=None, fetch_status=f"error: {str(e)}")
+
+def parse_html_file(file_path:str)-> ParsedWebPage:
+    """Parse a local html file"""
+
+    from pathlib import Path
+
+    path=Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    html=path.readt_text(encoding= "utf-8")
+
+    extracted= trafilatura.extract(
+        html,
+        include_comments=False,
+        include_tables=True
+    )
+
+    metadata= trafilatura.extract_metadata(html)
+    title=metadata.titile if metadata else None
+    return ParsedWebPage(
+        url=f"file://{path.absolute()}",
+        text=extracted or "",
+        title=title,
+        fetch_status="success" if extracted else "extraction_failed"
+    )
