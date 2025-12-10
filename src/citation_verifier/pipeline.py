@@ -1,7 +1,7 @@
 from pathlib import Path
-from .parsers.markdown import parse_markdown, resolve_references
-from .parsers.html_parser import parse_url , parse_html_file
-from .extractors.claim_extractor import extract_claims
+from parsers.markdown import parse_document as parse_markdown, resolve_references
+from parsers.html_parser import parse_url, parse_html_file
+from extractors.claim_extractor import extract_claims
 from .models import ClaimCitation
 
 def process_document(source : str) -> list[ClaimCitation]:
@@ -36,14 +36,14 @@ def process_document(source : str) -> list[ClaimCitation]:
             references={}
         
         elif suffix==".pdf":
-            #todo
-            pass
+            # TODO: Implement PDF parsing
+            raise NotImplementedError(f"PDF parsing not yet implemented")
         else:
             text=path.read_text(encoding="utf-8")
             references={}
-        
+
     claims=extract_claims(text)
-    claims=resolve_references(text,references)
+    claims=resolve_references(claims, references)
 
     verifiable_claims= [c for c in claims if c.citation_url]
     return verifiable_claims
