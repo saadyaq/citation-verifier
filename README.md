@@ -1,6 +1,47 @@
-# Citation Verifier
+<div align="center">
+
+# 🔍 Citation Verifier
+
+**Stop AI Hallucinations. Verify Every Citation.**
+
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
+[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation)
+
+</div>
+
+---
+
+## 🎯 Why Citation Verifier?
+
 
 An AI agent that verifies whether cited sources actually support the claims made in documents.
+
+## ✨ Features
+
+- ✅ **Multiple Format Support** - Markdown, PDF, HTML/URLs, and plain text
+- 🤖 **AI-Powered Analysis** - Uses Claude, GPT-4o, or local models via Langchain
+- 🎯 **Precise Verdicts** - SUPPORTED, NOT_SUPPORTED, PARTIAL, INCONCLUSIVE, SOURCE_UNAVAILABLE
+- 📊 **Detailed Reports** - Get confidence scores, explanations, and source quotes
+- 📦 **Multiple Interfaces** - CLI, Python API, and REST API
+- ⚡ **RAG for Long Documents** - Efficiently handles lengthy source materials
+
+## 🚀 Quick Start
+
+```bash
+# Install
+pip install -r requirements.txt
+
+# Set your API key
+export ANTHROPIC_API_KEY=your-key-here
+
+# Verify a document
+cite-verify check document.md
+```
+
+
 
 ## The Problem
 
