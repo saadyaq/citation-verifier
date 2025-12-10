@@ -1,67 +1,80 @@
-import httpx    
-from .models import SourceContent
+import anthropic
+from .models import ClaimCitation, SourceContent, VerificationResult, Verdict
+from dotenv import load_dotenv
+import os
 
-async def fetch_source(url: str, timeout: int = 30, max_size_mb: int = 10) -> SourceContent:
-    """Get the content of an url
+load_dotenv()
 
-    Args:
-        url: The URL to fetch
-        timeout: Timeout in seconds (default: 30)
-        max_size_mb: Maximum content size in MB (default: 10)
-    """
-    try:
-        # Validate URL format
-        if not url.startswith(('http://', 'https://')):
-            return SourceContent(url=url, fetch_status="error: invalid_url_scheme")
+# Verify API key exists
+api_key = os.getenv("ANTHROPIC_API_KEY")
+if not api_key:
+    raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                timeout=timeout,
-                follow_redirects=True,
-                headers={
-                    "User-Agent": "CitationVerifier/0.1"
-                }
+client = anthropic.Anthropic(api_key=api_key)
+print("✓ Claude API client initialized successfully")
+
+VERIFICATION_PROMPT= """Tu es un vérificateur de citations. Ta tâche est de déterminer si une source citée supporte réellement l'affirmation faite.
+
+AFFIRMATION À VÉRIFIER:
+{claim}
+
+CONTENU DE LA SOURCE CITÉE:
+{source_content}
+
+Analyse si la source supporte l'affirmation. Réponds en JSON avec ce format exact:
+{{
+    "verdict": "supported|not_supported|partial|inconclusive",
+    "confidence": 0.0-1.0,
+    "explanation": "Explication claire de ton verdict",
+    "source_quote": "Citation exacte de la source qui justifie ton verdict (ou null)"
+}}
+
+Critères:
+- SUPPORTED: La source dit explicitement ce que l'affirmation prétend
+- NOT_SUPPORTED: La source contredit l'affirmation ou ne mentionne pas le sujet
+- PARTIAL: La source supporte partiellement (chiffres différents, nuances omises)
+- INCONCLUSIVE: Impossible de déterminer avec certitude
+
+Réponds UNIQUEMENT avec le JSON, rien d'autre."""
+
+async def verify_claim(
+        claim : ClaimCitation,
+        source : SourceContent,
+        model : str ="claude-3-5-haiku-20241022"
+) -> VerificationResult:
+    """Verify if a source support the claim """
+
+    if source.fetch_status != "success" or not source.content:
+        return VerificationResult(
+            claim = claim ,
+            verdict = Verdict.SOURCE_UNAVAILABLE,
+            confidence=1.0,
+            explanation = f"Source unavailable : {source.fetch_status}"
+        )
+    
+    content= source.content[:8000] if len(source.content)>8000 else source.content
+    client = anthropic.Anthropic(api_key=api_key)
+    print("Claude API client initialized successfully")
+
+    response = client.messages.create(
+        model = model ,
+        max_tokens = 1024 ,
+        messages = [{
+            "role" : "user",
+            "content" : VERIFICATION_PROMPT.format(
+                claim = claim.claim_text,
+                source_content = content
             )
+        }]
+    )
 
-            if response.status_code == 200:
-                # Check content size
-                content_length = len(response.content)
-                max_size_bytes = max_size_mb * 1024 * 1024
+    import json 
+    result_data = json.loads(response.content[0].text)
 
-                if content_length > max_size_bytes:
-                    return SourceContent(
-                        url=url,
-                        fetch_status=f"error: content_too_large ({content_length / 1024 / 1024:.1f}MB)"
-                    )
-
-                return SourceContent(
-                    url=url,
-                    content=response.text,
-                    fetch_status="success"
-                )
-
-            elif response.status_code == 403:
-                return SourceContent(
-                    url=url,
-                    fetch_status="access_denied"
-                )
-
-            elif response.status_code == 404:
-                return SourceContent(
-                    url=url,
-                    fetch_status="not_found"
-                )
-
-            else:
-                return SourceContent(
-                    url=url,
-                    fetch_status=f"failed_{response.status_code}"
-                )
-
-    except httpx.TimeoutException:
-        return SourceContent(url=url, fetch_status="timeout")
-    except httpx.InvalidURL:
-        return SourceContent(url=url, fetch_status="error: invalid_url")
-    except Exception as e:
-        return SourceContent(url=url, fetch_status=f"error: {str(e)}")
+    return VerificationResult(
+        claim=claim,
+        verdict=Verdict(result_data["verdict"]),
+        confidence=result_data["confidence"],
+        explanation=result_data["explanation"],
+        source_quote=result_data.get("source_quote")
+    )
