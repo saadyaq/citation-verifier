@@ -1,38 +1,61 @@
 import asyncio
 from dotenv import load_dotenv
-from .models import ClaimCitation
+from .pipeline import process_document
 from .fetcher import fetch_source
 from .verifier import verify_claim
 
 load_dotenv()
 
+async def verify_document(source: str) -> list:
+    """Vérifie toutes les citations d'un document."""
+    
+    print(f"Processing: {source}")
+    
+    # Extraire les claims
+    claims = process_document(source)
+    print(f"Found {len(claims)} verifiable claims")
+    
+    results = []
+    
+    for i, claim in enumerate(claims, 1):
+        print(f"\n[{i}/{len(claims)}] Verifying: {claim.claim_text[:50]}...")
+        
+        # Fetch la source
+        source_content = await fetch_source(claim.citation_url)
+        
+        if source_content.fetch_status != "success":
+            print(f"  Source unavailable: {source_content.fetch_status}")
+            continue
+        
+        # Vérifier
+        result = await verify_claim(claim, source_content)
+        results.append(result)
+        
+        print(f"  Verdict: {result.verdict.value}")
+    
+    return results
+
+
 async def main():
+    import sys
     
-    claim = ClaimCitation(
-        claim_text="85% des entreprises utilisent l'IA en 2025",
-        citation_url="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
-        original_context="Selon McKinsey, 85% des entreprises utilisent l'IA en 2025."
-    )
+    if len(sys.argv) < 2:
+        print("Usage: python -m src.citation_verifier.main <file_or_url>")
+        sys.exit(1)
     
-    print(f"Vérification: {claim.claim_text}")
-    print(f"Source: {claim.citation_url}")
-    print("-" * 50)
+    source = sys.argv[1]
+    results = await verify_document(source)
     
+    # Résumé
+    print("\n" + "=" * 50)
+    print("SUMMARY")
+    print("=" * 50)
     
-    print("Fetching source...")
-    source = await fetch_source(claim.citation_url)
-    print(f"Status: {source.fetch_status}")
-    
-    if source.fetch_status == "success":
-        
-        print("Verifying claim...")
-        result = await verify_claim(claim, source)
-        
-        print(f"\nVERDICT: {result.verdict.value.upper()}")
-        print(f"Confidence: {result.confidence}")
-        print(f"Explanation: {result.explanation}")
-        if result.source_quote:
-            print(f"Source quote: {result.source_quote}")
+    for r in results:
+        print(f"\nClaim: {r.claim.claim_text[:60]}...")
+        print(f"Verdict: {r.verdict.value.upper()}")
+        print(f"Explanation: {r.explanation}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
