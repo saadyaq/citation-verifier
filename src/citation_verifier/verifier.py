@@ -68,11 +68,11 @@ async def verify_claim(
         }]
     )
 
-    import json 
+    import json
     result_data = json.loads(response.content[0].text)
 
     return VerificationResult(
-        claim=claim,
+        claim=claim.model_dump(),
         verdict=Verdict(result_data["verdict"]),
         confidence=result_data["confidence"],
         explanation=result_data["explanation"],

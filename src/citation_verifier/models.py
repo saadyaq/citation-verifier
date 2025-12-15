@@ -28,6 +28,8 @@ class SourceContent(BaseModel):
 
 
 class VerificationResult(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+
     claim: ClaimCitation
     verdict: Verdict
     confidence: float = Field(ge=0.0, le=1.0)
