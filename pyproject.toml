@@ -30,5 +30,8 @@ dev = [
     "pre-commit",
 ]
 
+[project.scripts]
+cite-verify = "citation_verifier.cli:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/citation_verifier"]
