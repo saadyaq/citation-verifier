@@ -208,15 +208,15 @@ def display_interactive_results(results: list):
         icon = verdict_icons.get(result.verdict.value, "•")
 
         with st.expander(
-            f"{icon} **Claim {i}:** {result.claim['claim_text'][:80]}... — **{result.verdict.value.upper()}**",
+            f"{icon} **Claim {i}:** {result.claim.claim_text[:80]}... — **{result.verdict.value.upper()}**",
             expanded=(result.verdict.value in ["not_supported", "partial"])
         ):
             # Claim details
             st.markdown(f"**Full Claim:**")
-            st.info(result.claim['claim_text'])
+            st.info(result.claim.claim_text)
 
             # Source URL
-            st.markdown(f"**Source:** [{result.claim['citation_url']}]({result.claim['citation_url']})")
+            st.markdown(f"**Source:** [{result.claim.citation_url}]({result.claim.citation_url})")
 
             # Verdict
             st.markdown(f"**Verdict:** :{color}[{icon} {result.verdict.value.upper()}]")
@@ -236,9 +236,9 @@ def display_interactive_results(results: list):
                 st.quote(result.source_quote)
 
             # Context (if available)
-            if hasattr(result.claim, 'context') and result.claim.get('context'):
+            if hasattr(result.claim, 'original_context') and result.claim.original_context:
                 with st.expander("Show context"):
-                    st.text(result.claim['context'])
+                    st.text(result.claim.original_context)
 
     # Download options
     st.markdown("---")
