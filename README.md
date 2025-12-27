@@ -4,7 +4,7 @@
 
 **Stop AI Hallucinations. Verify Every Citation.**
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
@@ -22,23 +22,33 @@ An AI agent that verifies whether cited sources actually support the claims made
 ## ✨ Features
 
 - ✅ **Multiple Format Support** - Markdown, PDF, HTML/URLs, and plain text
-- 🤖 **AI-Powered Analysis** - Uses Claude, GPT-4o, or local models via Langchain
+- 🤖 **AI-Powered Analysis** - Uses Claude Haiku/Sonnet or GPT-4o for verification
 - 🎯 **Precise Verdicts** - SUPPORTED, NOT_SUPPORTED, PARTIAL, INCONCLUSIVE, SOURCE_UNAVAILABLE
-- 📊 **Detailed Reports** - Get confidence scores, explanations, and source quotes
-- 📦 **Multiple Interfaces** - CLI, Python API, and REST API
-- ⚡ **RAG for Long Documents** - Efficiently handles lengthy source materials
+- 📊 **Detailed Reports** - JSON, Markdown, or Rich terminal output with confidence scores
+- 📦 **Multiple Interfaces** - Full-featured CLI, Python API, and REST API
+- ⚡ **RAG for Long Documents** - Automatic embedding-based retrieval for sources >8000 chars
+- 🎨 **Beautiful CLI** - Rich terminal formatting with progress indicators and colors
+- 🔌 **REST API** - FastAPI server with auto-generated docs and async support
 
 ## 🚀 Quick Start
 
 ```bash
 # Install
+pip install -e .
+# OR
 pip install -r requirements.txt
 
 # Set your API key
 export ANTHROPIC_API_KEY=your-key-here
 
-# Verify a document
+# Verify a document (CLI)
 cite-verify check document.md
+
+# Get JSON output
+cite-verify check document.md --output json
+
+# Start REST API server
+uvicorn citation_verifier.api:app --reload
 ```
 
 
@@ -95,14 +105,26 @@ export ANTHROPIC_API_KEY=sk-ant-your-key-here
 # Verify a local file
 cite-verify check document.md
 
+# Verify a PDF
+cite-verify check document.pdf
+
 # Verify a URL
 cite-verify check https://example.com/article
 
 # Output as JSON
-cite-verify check document.pdf --output json
+cite-verify check document.md --output json
+
+# Output as Markdown
+cite-verify check document.md --output markdown
 
 # Use a specific model
-cite-verify check document.md --model gpt-4o
+cite-verify check document.md --model claude-3-5-sonnet-20241022
+
+# Show version
+cite-verify version
+
+# Get help
+cite-verify --help
 ```
 
 ### Python API
@@ -122,13 +144,23 @@ for result in results:
 
 ```bash
 # Start the server
-uvicorn src.citation_verifier.api:app --reload
+uvicorn citation_verifier.api:app --reload
 
-# Make a request
-curl -X POST http://localhost:8000/verify \
+# Verify a document
+curl -X POST http://localhost:8000/verify/document \
   -H "Content-Type: application/json" \
-  -d '{"claim": "80% of companies use AI", "source_url": "https://..."}'
+  -d '{"source": "document.md"}'
+
+# Verify a single claim
+curl -X POST http://localhost:8000/verify/claim \
+  -H "Content-Type: application/json" \
+  -d '{"claim": "80% of companies use AI", "source_url": "https://example.com/study"}'
+
+# View API documentation
+open http://localhost:8000/docs
 ```
+
+See [API_README.md](API_README.md) for complete API documentation.
 
 ## Supported Formats
 
@@ -205,38 +237,68 @@ ruff check src/
 ruff format src/
 ```
 
+## RAG System for Long Documents
+
+For source documents longer than 8,000 characters, Citation Verifier automatically uses Retrieval-Augmented Generation (RAG):
+
+1. **Chunking** - Document is split into overlapping chunks (500 chars each, 50 char overlap)
+2. **Embedding** - Each chunk is embedded using sentence-transformers (local, no API costs)
+3. **Retrieval** - For each claim, the top 5 most relevant chunks are found via cosine similarity
+4. **Verification** - Only the relevant passages (up to 6,000 chars) are sent to the LLM
+
+**Benefits:**
+- ✅ More accurate verification by focusing on relevant content
+- ✅ Lower costs (fewer tokens sent to LLM)
+- ✅ Works with sources of any length
+- ✅ Local embeddings (no external API required)
+
+**Fallback:** If RAG fails, the system falls back to simple truncation at 8,000 characters.
+
 ## Project Structure
 
 ```
 citation-verifier/
 ├── src/
-│   └── citation_verifier/
-│       ├── models.py          # Data models
-│       ├── cli.py             # CLI interface
-│       ├── api.py             # REST API
-│       ├── parsers/           # Document parsers
-│       ├── extractors/        # Claim extraction
-│       ├── fetchers/          # Source fetching
-│       ├── analyzers/         # RAG for long sources
-│       ├── verifier/          # Core verification logic
-│       └── reporters/         # Output formatting
-├── tests/
-├── examples/
-└── README.md
+│   ├── citation_verifier/
+│   │   ├── models.py          # Data models
+│   │   ├── cli.py             # CLI interface
+│   │   ├── api.py             # REST API
+│   │   ├── main.py            # Main verification workflow
+│   │   ├── pipeline.py        # Document processing pipeline
+│   │   ├── fetcher.py         # Source fetching
+│   │   └── verifier.py        # Core verification logic
+│   ├── parsers/               # Document parsers (MD, PDF, HTML)
+│   ├── extractors/            # Claim extraction with LLM
+│   ├── fetchers/              # Source fetching utilities
+│   ├── analyzers/             # RAG system (chunker, retriever)
+│   └── reporters/             # Output formatters (JSON, MD, terminal)
+├── tests/                     # Test suite
+├── examples/                  # Example documents
+├── API_README.md             # REST API documentation
+└── README.md                 # This file
 ```
 
 ## Roadmap
 
+### ✅ Completed
 - [x] Core verification engine
-- [x] CLI interface
+- [x] CLI interface with Typer
 - [x] Markdown parser
 - [x] PDF parser
-- [x] JSON/Markdown reports
-- [ ] REST API
-- [ ] Web UI
+- [x] HTML/URL parser
+- [x] JSON/Markdown/Terminal reporters
+- [x] REST API with FastAPI
+- [x] RAG system for long documents
+- [x] Embedding-based retrieval
+- [x] Rich terminal output
+
+### 🚧 Planned
+- [ ] Web UI (Streamlit/Gradio)
 - [ ] DOI/ArXiv support
 - [ ] Source caching
 - [ ] Batch processing
+- [ ] OpenAI embeddings option
+- [ ] Word (.docx) support
 
 ## Contributing
 
