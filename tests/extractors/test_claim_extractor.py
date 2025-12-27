@@ -3,11 +3,7 @@ from extractors.claim_extractor import extract_claims
 from citation_verifier.models import ClaimCitation
 
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(
-    not pytest.config.getoption("--run-api-tests", default=False),
-    reason="API tests disabled by default (use --run-api-tests to enable)"
-)
+@pytest.mark.api
 async def test_extract_claims_basic():
     """Test extracting claims from a simple document"""
     document = """

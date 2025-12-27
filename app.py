@@ -118,7 +118,7 @@ def main():
     st.markdown(
         """
         <div style='text-align: center; color: #666; padding: 20px;'>
-            <p>Built with ❤️ using Claude AI | Version 0.1.0</p>
+            <p>Version 0.1.0</p>
             <p>⚠️ Make sure to set your <code>ANTHROPIC_API_KEY</code> environment variable</p>
         </div>
         """,
