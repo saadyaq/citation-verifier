@@ -21,6 +21,8 @@ dependencies = [
     "chromadb",
     "typer",
     "rich",
+    "fastapi",
+    "uvicorn",
 ]
 
 [project.optional-dependencies]
