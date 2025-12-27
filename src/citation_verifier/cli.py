@@ -48,6 +48,11 @@ def check(
         "-v",
         help="Show detailed progress"
     ),
+    no_rag: bool = typer.Option(
+        False,
+        "--no-rag",
+        help="Disable RAG (Retrieval-Augmented Generation) for long documents. Use this on systems with limited memory."
+    ),
 ):
     """Verify citations in a document."""
 
@@ -60,7 +65,7 @@ def check(
 
     # Run verification
     try:
-        results = asyncio.run(_verify_with_progress(source, verbose))
+        results = asyncio.run(_verify_with_progress(source, verbose, use_rag=not no_rag))
     except KeyboardInterrupt:
         console.print("\n[yellow]Verification cancelled by user[/yellow]")
         raise typer.Exit(130)
@@ -82,7 +87,7 @@ def check(
         raise typer.Exit(1)
 
 
-async def _verify_with_progress(source: str, verbose: bool) -> list:
+async def _verify_with_progress(source: str, verbose: bool, use_rag: bool = True) -> list:
     """Run verification with progress display."""
     with Progress(
         SpinnerColumn(),
@@ -91,7 +96,7 @@ async def _verify_with_progress(source: str, verbose: bool) -> list:
         transient=not verbose,
     ) as progress:
         task = progress.add_task(f"Verifying citations in {source}...", total=None)
-        results = await verify_document(source)
+        results = await verify_document(source, use_rag=use_rag)
         progress.update(task, completed=True)
 
     return results

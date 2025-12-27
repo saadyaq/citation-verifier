@@ -40,7 +40,8 @@ Réponds UNIQUEMENT avec le JSON, rien d'autre."""
 async def verify_claim(
         claim : ClaimCitation,
         source : SourceContent,
-        model : str ="claude-3-5-haiku-20241022"
+        model : str ="claude-3-5-haiku-20241022",
+        use_rag: bool = True
 ) -> VerificationResult:
     """Verify if a source support the claim """
 
@@ -52,8 +53,8 @@ async def verify_claim(
             explanation = f"Source unavailable : {source.fetch_status}"
         )
 
-    # Use RAG for long documents
-    if len(source.content) > 8000:
+    # Use RAG for long documents (if enabled and document is long enough)
+    if use_rag and len(source.content) > 15000:
         try:
             from analyzers.retriever import get_relevant_context
             content = get_relevant_context(claim.claim_text, source.content, max_context_chars=6000)
@@ -61,9 +62,10 @@ async def verify_claim(
         except Exception as e:
             # Fallback to truncation if RAG fails
             print(f"  RAG retrieval failed: {e}, falling back to truncation")
-            content = source.content[:8000]
+            content = source.content[:15000]
     else:
-        content = source.content
+        # Truncate if too long and RAG is disabled
+        content = source.content[:15000] if len(source.content) > 15000 else source.content
     client = anthropic.Anthropic(api_key=api_key)
     print("Claude API client initialized successfully")
 
