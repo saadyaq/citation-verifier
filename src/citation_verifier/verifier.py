@@ -51,8 +51,19 @@ async def verify_claim(
             confidence=1.0,
             explanation = f"Source unavailable : {source.fetch_status}"
         )
-    
-    content= source.content[:8000] if len(source.content)>8000 else source.content
+
+    # Use RAG for long documents
+    if len(source.content) > 8000:
+        try:
+            from analyzers.retriever import get_relevant_context
+            content = get_relevant_context(claim.claim_text, source.content, max_context_chars=6000)
+            print(f"  Using RAG: Retrieved {len(content)} chars of relevant context")
+        except Exception as e:
+            # Fallback to truncation if RAG fails
+            print(f"  RAG retrieval failed: {e}, falling back to truncation")
+            content = source.content[:8000]
+    else:
+        content = source.content
     client = anthropic.Anthropic(api_key=api_key)
     print("Claude API client initialized successfully")
 
