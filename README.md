@@ -25,24 +25,37 @@ An AI agent that verifies whether cited sources actually support the claims made
 - 🤖 **AI-Powered Analysis** - Uses Claude Haiku/Sonnet or GPT-4o for verification
 - 🎯 **Precise Verdicts** - SUPPORTED, NOT_SUPPORTED, PARTIAL, INCONCLUSIVE, SOURCE_UNAVAILABLE
 - 📊 **Detailed Reports** - JSON, Markdown, or Rich terminal output with confidence scores
-- 📦 **Multiple Interfaces** - Full-featured CLI, Python API, and REST API
-- ⚡ **RAG for Long Documents** - Automatic embedding-based retrieval for sources >8000 chars
+- 📦 **Multiple Interfaces** - Web UI (Streamlit), CLI, Python API, and REST API
+- 🖥️ **Beautiful Web Interface** - Interactive Streamlit app with file upload and real-time results
+- ⚡ **RAG for Long Documents** - Automatic embedding-based retrieval for sources >15000 chars
 - 🎨 **Beautiful CLI** - Rich terminal formatting with progress indicators and colors
 - 🔌 **REST API** - FastAPI server with auto-generated docs and async support
 
 ## 🚀 Quick Start
 
+### Web Interface (Recommended)
+
 ```bash
 # Install
 pip install -e .
-# OR
-pip install -r requirements.txt
 
 # Set your API key
 export ANTHROPIC_API_KEY=your-key-here
 
-# Verify a document (CLI)
+# Launch web interface
+streamlit run app.py
+```
+
+Then open your browser to `http://localhost:8501` and start verifying!
+
+### Command Line
+
+```bash
+# Verify a document
 cite-verify check document.md
+
+# Disable RAG for low-memory systems
+cite-verify check document.pdf --no-rag
 
 # Get JSON output
 cite-verify check document.md --output json
@@ -99,6 +112,23 @@ export ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 ## Usage
 
+### Web Interface
+
+The easiest way to use Citation Verifier is through the web interface:
+
+```bash
+streamlit run app.py
+```
+
+**Features:**
+- 📤 Upload files (MD, PDF, HTML) or paste URLs
+- ⚙️ Configure model, RAG, and output format
+- 📊 View interactive results with statistics
+- 💾 Download reports in JSON or Markdown
+- 🎨 Beautiful color-coded verdicts
+
+See [WEB_UI_GUIDE.md](WEB_UI_GUIDE.md) for detailed instructions.
+
 ### Command Line
 
 ```bash
@@ -119,6 +149,9 @@ cite-verify check document.md --output markdown
 
 # Use a specific model
 cite-verify check document.md --model claude-3-5-sonnet-20241022
+
+# Disable RAG (for low-memory systems)
+cite-verify check document.pdf --no-rag
 
 # Show version
 cite-verify version
@@ -239,11 +272,11 @@ ruff format src/
 
 ## RAG System for Long Documents
 
-For source documents longer than 8,000 characters, Citation Verifier automatically uses Retrieval-Augmented Generation (RAG):
+For source documents longer than 15,000 characters, Citation Verifier can use Retrieval-Augmented Generation (RAG):
 
 1. **Chunking** - Document is split into overlapping chunks (500 chars each, 50 char overlap)
 2. **Embedding** - Each chunk is embedded using sentence-transformers (local, no API costs)
-3. **Retrieval** - For each claim, the top 5 most relevant chunks are found via cosine similarity
+3. **Retrieval** - For each claim, the top 3 most relevant chunks are found via cosine similarity
 4. **Verification** - Only the relevant passages (up to 6,000 chars) are sent to the LLM
 
 **Benefits:**
@@ -252,12 +285,15 @@ For source documents longer than 8,000 characters, Citation Verifier automatical
 - ✅ Works with sources of any length
 - ✅ Local embeddings (no external API required)
 
-**Fallback:** If RAG fails, the system falls back to simple truncation at 8,000 characters.
+**Note:** RAG requires ~400MB of memory. Use `--no-rag` flag or disable in the web interface on low-memory systems.
+
+**Fallback:** If RAG fails or is disabled, the system falls back to simple truncation at 15,000 characters.
 
 ## Project Structure
 
 ```
 citation-verifier/
+├── app.py                     # Streamlit web interface
 ├── src/
 │   ├── citation_verifier/
 │   │   ├── models.py          # Data models
@@ -274,6 +310,7 @@ citation-verifier/
 │   └── reporters/             # Output formatters (JSON, MD, terminal)
 ├── tests/                     # Test suite
 ├── examples/                  # Example documents
+├── WEB_UI_GUIDE.md           # Web interface documentation
 ├── API_README.md             # REST API documentation
 └── README.md                 # This file
 ```
@@ -283,6 +320,7 @@ citation-verifier/
 ### ✅ Completed
 - [x] Core verification engine
 - [x] CLI interface with Typer
+- [x] Web UI with Streamlit
 - [x] Markdown parser
 - [x] PDF parser
 - [x] HTML/URL parser
@@ -291,14 +329,15 @@ citation-verifier/
 - [x] RAG system for long documents
 - [x] Embedding-based retrieval
 - [x] Rich terminal output
+- [x] Memory-efficient mode (--no-rag)
 
 ### 🚧 Planned
-- [ ] Web UI (Streamlit/Gradio)
 - [ ] DOI/ArXiv support
 - [ ] Source caching
 - [ ] Batch processing
 - [ ] OpenAI embeddings option
 - [ ] Word (.docx) support
+- [ ] Chrome extension
 
 ## Contributing
 
