@@ -23,6 +23,7 @@ dependencies = [
     "rich",
     "fastapi",
     "uvicorn",
+    "streamlit",
 ]
 
 [project.optional-dependencies]
