@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "citation-verifier"
 version = "0.1.0"
 description = "AI-powered citation verification tool"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic",
     "httpx",
