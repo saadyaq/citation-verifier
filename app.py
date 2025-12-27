@@ -233,7 +233,7 @@ def display_interactive_results(results: list):
             # Source quote (if available)
             if result.source_quote:
                 st.markdown("**Source Quote:**")
-                st.quote(result.source_quote)
+                st.markdown(f"> {result.source_quote}")
 
             # Context (if available)
             if hasattr(result.claim, 'original_context') and result.claim.original_context:
