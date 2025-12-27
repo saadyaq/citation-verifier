@@ -22,7 +22,7 @@ st.set_page_config(
 # Import after streamlit config
 from src.citation_verifier.main import verify_document
 from src.reporters.json_report import generate_json_report
-from src.reporters.markdown_report import generate_markdown_report
+from src.reporters.markdown_report import format_markdown_report
 
 
 def main():
@@ -258,7 +258,7 @@ def display_interactive_results(results: list):
 
     with col2:
         # Markdown download
-        md_data = generate_markdown_report(results)
+        md_data = format_markdown_report(results)
         st.download_button(
             label="📥 Download Markdown",
             data=md_data,
@@ -290,7 +290,7 @@ def display_markdown_results(results: list):
 
     st.success(f"✓ Verification complete! Found {len(results)} claims.")
 
-    md_data = generate_markdown_report(results)
+    md_data = format_markdown_report(results)
 
     st.markdown(md_data)
 
